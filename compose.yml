@@ -1,0 +1,19 @@
+services:
+  base:
+    build:
+      target: builder
+    user: ${DOCKER_UID}:${DOCKER_GID}
+    volumes:
+      - './:/opt/chia'
+  remix:
+    extends:
+      service: base
+    ports:
+      - 3000:3000
+      - 8002:8002
+    command: 'remix dev'
+  tailwinds:
+    extends:
+      service: base
+    tty: true
+    command: 'tailwindcss --watch --input ./styles/app.css --output app/styles/app.css'
