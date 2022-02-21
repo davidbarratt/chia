@@ -1,8 +1,7 @@
 {
-  "private": true,
-  "name": "remix-app-template",
+  "name": "@davidbarratt/chia",
   "description": "",
-  "license": "",
+  "license": "AGPL-3.0-or-later",
   "scripts": {
     "postinstall": "remix setup node"
   },
