@@ -25,9 +25,7 @@ COPY postcss.config.js remix.config.js remix.env.d.ts tailwind.config.js tsconfi
 RUN tailwindcss -m -i ./styles/app.css -o app/styles/app.css \
     && remix build
 
-
-FROM base AS serverdeps
-COPY --from=builderdeps /opt/chia/package.json /opt/chia/package-lock.json ./
+FROM builderdeps AS serverdeps
 RUN npm ci --production --ignore-scripts
 
 # Production image, copy all the files and run remix

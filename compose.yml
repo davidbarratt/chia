@@ -8,6 +8,13 @@ services:
   remix:
     extends:
       service: base
+    environment:
+      - CHIA_FULL_NODE_URL
+    secrets:
+      - source: full-node-cert
+        target: full_node/private_full_node.crt
+      - source: full-node-key
+        target: full_node/private_full_node.key
     ports:
       - 3000:3000
       - 8002:8002
@@ -17,3 +24,8 @@ services:
       service: base
     tty: true
     command: 'tailwindcss --watch --input ./styles/app.css --output app/styles/app.css'
+secrets:
+  full-node-cert:
+    file: ./certs/full_node/private_full_node.crt
+  full-node-key:
+    file: ./certs/full_node/private_full_node.key

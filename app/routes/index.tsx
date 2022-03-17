@@ -1,4 +1,4 @@
-import createFetch from '~/src/fetch.server';
+import { ChiaService, createFetch } from '~/src/fetch.server';
 import { LoaderFunction, useFetcher, useLoaderData, useLocation } from "remix";
 import { ReactNode, useEffect } from 'react';
 
@@ -23,15 +23,9 @@ interface LoaderData {
 }
 
 export const loader: LoaderFunction = async (): Promise<LoaderData> => {
-  const fetch = await createFetch();
+  const fullNodeFetch = await createFetch(ChiaService.FULL_NODE);
 
-  const response = await fetch('https://chia:8555/get_blockchain_state', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({}),
-  });
+  const response = await fullNodeFetch('get_blockchain_state');
 
   if (!response.ok) {
     throw new Error(`Error Response from Chia: ${response.status} ${response.statusText}`)
