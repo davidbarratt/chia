@@ -36,6 +36,8 @@ COPY --from=builder /opt/chia/public ./public
 COPY --from=builder /opt/chia/remix.config.js /opt/chia/package.json /opt/chia/package-lock.json ./
 COPY --from=builder --chown=node:node /opt/chia/build ./build
 
+EXPOSE 3000
+
 USER node
 
 CMD ["remix-serve", "build"]

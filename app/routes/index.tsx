@@ -22,6 +22,14 @@ interface LoaderData {
   sync: BlockChainStateSync;
 }
 
+function isBlockChainStateResponse(data: unknown): data is BlockChainStateResponse {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+
+  return 'blockchain_state' in data;
+}
+
 export const loader: LoaderFunction = async (): Promise<LoaderData> => {
   const fullNodeFetch = await createFetch(ChiaService.FULL_NODE);
 
@@ -31,10 +39,14 @@ export const loader: LoaderFunction = async (): Promise<LoaderData> => {
     throw new Error(`Error Response from Chia: ${response.status} ${response.statusText}`)
   }
 
-  const { blockchain_state }: BlockChainStateResponse = await response.json();
+  const data = await response.json() as unknown;
+
+  if (!isBlockChainStateResponse(data)) {
+    throw new Error('Unknown Response');
+  }
 
   return {
-    sync: blockchain_state.sync,
+    sync: data.blockchain_state.sync,
   };
 };
 
