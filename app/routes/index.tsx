@@ -1,5 +1,6 @@
 import { ChiaService, createFetch } from '~/src/fetch.server';
-import { LoaderFunction, useFetcher, useLoaderData, useLocation } from "remix";
+import { LoaderFunction } from "@remix-run/node";
+import { useFetcher, useLoaderData, useLocation } from "@remix-run/react";
 import { ReactNode, useEffect } from 'react';
 import { Socket } from 'node:net';
 
