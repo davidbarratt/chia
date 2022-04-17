@@ -2,7 +2,7 @@ import { ChiaService, createFetch } from '~/src/fetch.server';
 import { LoaderFunction } from "@remix-run/node";
 import { useFetcher, useLoaderData, useLocation } from "@remix-run/react";
 import { ReactNode, useEffect } from 'react';
-import { Socket } from 'node:net';
+import net from 'net';
 
 interface BlockChainStateSync {
   sync_mode: boolean;
@@ -53,7 +53,7 @@ async function getBlockChainState(): Promise<BlockChainStateResponse> {
 
 function isReachable(url: URL): Promise<boolean> {
   return new Promise(((resolve, reject) => {
-    const socket = new Socket();
+    const socket = new net.Socket();
 
 		socket.once('error', (e) => {
 			socket.destroy();
