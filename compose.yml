@@ -27,6 +27,10 @@ services:
         target: full_node/private_full_node.crt
       - source: full-node-key
         target: full_node/private_full_node.key
+      - source: harvester-cert
+        target: harvester/private_harvester.crt
+      - source: harvester-key
+        target: harvester/private_harvester.key
     ports:
       - 3000:3000
       - 8002:8002
@@ -45,3 +49,7 @@ secrets:
     file: ./certs/full_node/private_full_node.crt
   full-node-key:
     file: ./certs/full_node/private_full_node.key
+  harvester-cert:
+    file: ./certs/harvester/private_harvester.crt
+  harvester-key:
+    file: ./certs/harvester/private_harvester.key

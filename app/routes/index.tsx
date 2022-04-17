@@ -2,7 +2,9 @@ import { ChiaService, createFetch } from '~/src/fetch.server';
 import { LoaderFunction } from "@remix-run/node";
 import { useFetcher, useLoaderData, useLocation } from "@remix-run/react";
 import { ReactNode, useEffect } from 'react';
+
 import net from 'net';
+import fileSize from 'filesize';
 
 interface BlockChainStateSync {
   sync_mode: boolean;
@@ -23,6 +25,17 @@ interface BlockChainStateResponse {
 interface LoaderData {
   sync: BlockChainStateSync;
   farmer: boolean,
+  plots: number,
+  size: string,
+}
+
+interface Plot {
+  file_size: number,
+}
+
+interface PlotsResponse {
+  plots: Plot[];
+  success: boolean;
 }
 
 function isBlockChainStateResponse(data: unknown): data is BlockChainStateResponse {
@@ -33,7 +46,7 @@ function isBlockChainStateResponse(data: unknown): data is BlockChainStateRespon
   return 'blockchain_state' in data;
 }
 
-async function getBlockChainState(): Promise<BlockChainStateResponse> {
+async function getBlockChainState(): Promise<BlockChainState> {
   const fullNodeFetch = await createFetch(ChiaService.FULL_NODE);
 
   const response = await fullNodeFetch('get_blockchain_state');
@@ -48,7 +61,34 @@ async function getBlockChainState(): Promise<BlockChainStateResponse> {
     throw new Error('Unknown Response');
   }
 
-  return data;
+  return data.blockchain_state;
+}
+
+
+function isPlotsResponse(data: unknown): data is PlotsResponse {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+
+  return 'plots' in data;
+}
+
+async function getPlots(): Promise<Plot[]> {
+  const harvesterFetch = await createFetch(ChiaService.HARVESTER);
+
+  const response = await harvesterFetch('get_plots');
+
+  if (!response.ok) {
+    throw new Error(`Error Response from Chia: ${response.status} ${response.statusText}`)
+  }
+
+  const data = await response.json() as unknown;
+
+  if (!isPlotsResponse(data)) {
+    throw new Error('Unknown Response');
+  }
+
+  return data.plots;
 }
 
 function isReachable(url: URL): Promise<boolean> {
@@ -74,14 +114,21 @@ async function getFarmerStatus(): Promise<boolean> {
 }
 
 export const loader: LoaderFunction = async (): Promise<LoaderData> => {
-  const [data, farmer] = await Promise.all([
+  const [state, farmer, plots] = await Promise.all([
     getBlockChainState(),
     getFarmerStatus(),
+    getPlots(),
   ]);
 
+  const totalSize = plots.reduce((acc, { file_size }) => {
+    return acc + file_size;
+  }, 0);
+
   return {
-    sync: data.blockchain_state.sync,
+    sync: state.sync,
     farmer,
+    plots: plots.length,
+    size: fileSize(totalSize),
   };
 };
 
@@ -182,7 +229,7 @@ export default function Index() {
   }, [fetcher, location.pathname]);
 
   // Use the fetched data, otherwise use the initial data.
-  const { sync, farmer } = fetcher.data ? fetcher.data : data;
+  const { sync, farmer, plots, size } = fetcher.data ? fetcher.data : data;
 
   let syncState: SyncState = {
     status: SyncStatus.UNKNOWN,
@@ -221,6 +268,10 @@ export default function Index() {
   if (sync.sync_tip_height > 0) {
     progress = (
       <div className="text-3xl text-stone-500">{sync.sync_progress_height.toLocaleString()} / {sync.sync_tip_height.toLocaleString()}</div>
+    );
+  } else if (syncState.status = SyncStatus.FARMINMG) {
+    progress = (
+      <div className="text-3xl text-stone-500">{plots} {plots > 1 ? 'Plots' : 'Plot'} / {size}</div>
     );
   }
 

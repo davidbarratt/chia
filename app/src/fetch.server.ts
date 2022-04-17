@@ -7,6 +7,7 @@ interface NodeRequestInit extends RequestInit {
 
 export enum ChiaService {
     FULL_NODE,
+    HARVESTER,
 }
 
 interface ChiaServiceMeta {
@@ -17,7 +18,7 @@ interface ChiaServiceMeta {
 
 async function getServiceMeta(endpoint: ChiaService): Promise<ChiaServiceMeta> {
     switch (endpoint) {
-        case ChiaService.FULL_NODE:
+        case ChiaService.FULL_NODE: {
             const [cert, key] = await Promise.all([
                 readFile('/run/secrets/full_node/private_full_node.crt'),
                 readFile('/run/secrets/full_node/private_full_node.key'),
@@ -27,6 +28,18 @@ async function getServiceMeta(endpoint: ChiaService): Promise<ChiaServiceMeta> {
                 cert,
                 key,
             };
+        }
+        case ChiaService.HARVESTER: {
+            const [cert, key] = await Promise.all([
+                readFile('/run/secrets/harvester/private_harvester.crt'),
+                readFile('/run/secrets/harvester/private_harvester.key'),
+            ]);
+            return {
+                base: new URL(process.env.CHIA_HARVESTER_URL || 'https://localhost:8560'),
+                cert,
+                key,
+            };
+        }
     }
 }
 
@@ -50,7 +63,7 @@ export async function createFetch(endpoint: ChiaService): Promise<typeof fetch> 
                 key,
                 timeout: 5_000,
             }),
-            body: JSON.stringify({}),
+            body: request.body ? request.body : JSON.stringify({}),
         };
 
         return fetch(request, options);
