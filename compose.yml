@@ -5,9 +5,21 @@ services:
     user: ${DOCKER_UID}:${DOCKER_GID}
     volumes:
       - './:/opt/chia'
+  npm:
+    extends:
+      service: base
+    user: ${DOCKER_UID}:${DOCKER_GID}
+    volumes:
+      - './:/opt/chia'
+    entrypoint: 'npm'
+    command: 'install'
   remix:
     extends:
       service: base
+    depends_on:
+      npm:
+        condition: service_completed_successfully
+    restart: on-failure
     environment:
       - CHIA_FULL_NODE_URL
     secrets:
@@ -22,6 +34,10 @@ services:
   tailwinds:
     extends:
       service: base
+    depends_on:
+      npm:
+        condition: service_completed_successfully
+    restart: on-failure
     tty: true
     command: 'tailwindcss --watch --input ./styles/app.css --output app/styles/app.css'
 secrets:

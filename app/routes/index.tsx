@@ -1,6 +1,7 @@
 import { ChiaService, createFetch } from '~/src/fetch.server';
 import { LoaderFunction, useFetcher, useLoaderData, useLocation } from "remix";
 import { ReactNode, useEffect } from 'react';
+import { Socket } from 'node:net';
 
 interface BlockChainStateSync {
   sync_mode: boolean;
@@ -20,6 +21,7 @@ interface BlockChainStateResponse {
 
 interface LoaderData {
   sync: BlockChainStateSync;
+  farmer: boolean,
 }
 
 function isBlockChainStateResponse(data: unknown): data is BlockChainStateResponse {
@@ -30,7 +32,7 @@ function isBlockChainStateResponse(data: unknown): data is BlockChainStateRespon
   return 'blockchain_state' in data;
 }
 
-export const loader: LoaderFunction = async (): Promise<LoaderData> => {
+async function getBlockChainState(): Promise<BlockChainStateResponse> {
   const fullNodeFetch = await createFetch(ChiaService.FULL_NODE);
 
   const response = await fullNodeFetch('get_blockchain_state');
@@ -45,8 +47,40 @@ export const loader: LoaderFunction = async (): Promise<LoaderData> => {
     throw new Error('Unknown Response');
   }
 
+  return data;
+}
+
+function isReachable(url: URL): Promise<boolean> {
+  return new Promise(((resolve, reject) => {
+    const socket = new Socket();
+
+		socket.once('error', (e) => {
+			socket.destroy();
+			reject(e);
+		});
+
+		socket.connect(Number(url.port), url.hostname, () => {
+			socket.end();
+			resolve(true);
+		});
+	}));
+}
+
+async function getFarmerStatus(): Promise<boolean> {
+  const url = new URL(process.env.CHIA_FARMER_URL || 'https://localhost:8559');
+
+  return isReachable(url);
+}
+
+export const loader: LoaderFunction = async (): Promise<LoaderData> => {
+  const [data, farmer] = await Promise.all([
+    getBlockChainState(),
+    getFarmerStatus(),
+  ]);
+
   return {
     sync: data.blockchain_state.sync,
+    farmer,
   };
 };
 
@@ -55,6 +89,8 @@ enum SyncStatus {
   SYNCING = 'Syncing',
   NOTSYNCING = 'Not Syncing',
   UNKNOWN = 'Unknown',
+  FARMINMG = 'Farming',
+  NOTFARMING = 'Not Farming',
 }
 
 interface SyncState {
@@ -145,7 +181,7 @@ export default function Index() {
   }, [fetcher, location.pathname]);
 
   // Use the fetched data, otherwise use the initial data.
-  const { sync } = fetcher.data ? fetcher.data : data;
+  const { sync, farmer } = fetcher.data ? fetcher.data : data;
 
   let syncState: SyncState = {
     status: SyncStatus.UNKNOWN,
@@ -153,11 +189,19 @@ export default function Index() {
     iconColor: 'fill-stone-700',
   };
   if (!sync.sync_mode && sync.synced) {
-    syncState = {
-      status: SyncStatus.SYNCED,
-      textColor: 'text-chia',
-      iconColor: 'fill-chia',
-    };
+    if (farmer) {
+      syncState = {
+        status: SyncStatus.FARMINMG,
+        textColor: 'text-chia',
+        iconColor: 'fill-chia',
+      };
+    } else {
+      syncState = {
+        status: SyncStatus.NOTFARMING,
+        textColor: 'text-red-800',
+        iconColor: 'fill-red-800',
+      };
+    }
   } else if (sync.sync_mode && !sync.synced) {
     syncState = {
       status: SyncStatus.SYNCING,

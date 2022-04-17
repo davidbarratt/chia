@@ -1,4 +1,3 @@
-# TODO change this to alpine when rails is gone.
 FROM node:lts-alpine AS base
 RUN mkdir -p /opt/chia
 WORKDIR /opt/chia

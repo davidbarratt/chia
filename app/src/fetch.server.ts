@@ -39,6 +39,9 @@ export async function createFetch(endpoint: ChiaService): Promise<typeof fetch> 
             resource = url.toString();
         }
 
+        const request = new Request(resource, init);
+        request.headers.set('Content-Type', 'application/json');
+
         const options: NodeRequestInit = {
             method: 'POST',
             agent: new Agent({
@@ -48,13 +51,8 @@ export async function createFetch(endpoint: ChiaService): Promise<typeof fetch> 
                 timeout: 5_000,
             }),
             body: JSON.stringify({}),
-            ...(init || {}),
-            headers: {
-                'Content-Type': 'application/json',
-                ...(init?.headers || {}),
-            },
         };
 
-        return fetch(resource, options);
+        return fetch(request, options);
     };
 }
