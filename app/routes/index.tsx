@@ -269,7 +269,7 @@ export default function Index() {
     progress = (
       <div className="text-3xl text-stone-500">{sync.sync_progress_height.toLocaleString()} / {sync.sync_tip_height.toLocaleString()}</div>
     );
-  } else if (syncState.status = SyncStatus.FARMINMG) {
+  } else if (syncState.status === SyncStatus.FARMINMG) {
     progress = (
       <div className="text-3xl text-stone-500">{plots} {plots > 1 ? 'Plots' : 'Plot'} / {size}</div>
     );
