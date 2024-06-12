@@ -212,7 +212,7 @@ export function ErrorBoundary({ error }: { error: unknown }) {
 }
 
 export default function Index() {
-  const data: LoaderData = useLoaderData();
+  const data = useLoaderData<LoaderData>();
   const fetcher = useFetcher<LoaderData>();
   const location = useLocation();
 
